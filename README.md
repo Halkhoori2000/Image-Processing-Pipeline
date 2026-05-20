@@ -2,7 +2,7 @@
 
 An end-to-end RAW image processing pipeline implemented from scratch in MATLAB, converting a 16-bit Bayer sensor image to a display-ready sRGB output. Each stage is implemented manually without using MATLAB's built-in image processing functions.
 
-**[Pipeline Walkthrough →](https://halkhoori2000.github.io/The-Image-Processing-Pipeline/)**
+**[Pipeline Walkthrough →](https://halkhoori2000.github.io/Image-Processing-Pipeline/)**
 
 ---
 
