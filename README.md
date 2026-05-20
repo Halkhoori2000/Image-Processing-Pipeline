@@ -6,6 +6,17 @@ Implemented in MATLAB without using any built-in image processing functions. The
 
 **[Pipeline Walkthrough →](https://halkhoori2000.github.io/Image-Processing-Pipeline/)**
 
+## Use Cases
+- Digital camera firmware: every smartphone and DSLR runs an equivalent pipeline on raw sensor output before displaying or saving an image
+- Computational photography research: HDR imaging, night mode, and portrait mode all build on top of linearised, white-balanced, demosaiced sensor data
+- Computer vision preprocessing: machine learning models for detection and segmentation expect linearly scaled RGB input, not gamma-corrected JPEG — this pipeline produces it
+- Satellite and aerial imaging: raw sensor data from remote sensing cameras undergoes the same linearisation and demosaicing steps before analysis
+
+## Challenges
+- **Bayer pattern identification**: the colour filter arrangement (RGGB, GRBG, BGGR, GBRG) is not stored in the TIFF metadata — the correct pattern must be identified by constructing all four possible quarter-resolution RGB images and selecting the one that produces the most natural colour balance
+- **Demosaicing at image boundaries**: bilinear interpolation breaks down at edges where the kernel extends beyond the image — handling border pixels without introducing colour fringing or brightness discontinuities requires careful padding decisions
+- **White balance channel ordering**: white balance must scale the raw Bayer channels before demosaicing — applying it after mixes unbalanced values during interpolation; both gray-world and white-world assumptions also fail on scenes that are not neutral in average or maximum luminance, making threshold selection non-trivial
+
 ---
 
 ## Pipeline Stages
