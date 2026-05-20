@@ -39,6 +39,18 @@
     .input-card .field-val { font-size: 0.88rem; font-family: var(--mono); color: var(--yellow); }
     @media (max-width: 600px) { .input-card { flex-direction: column; } .input-img { width: 100%; } }
 
+    /* ── Stage outputs grid ── */
+    .stages-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 2.5rem; }
+    .stage-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .stage-card-final { border-color: var(--green); }
+    .stage-card img { width: 100%; display: block; background: #000; }
+    .stage-label { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+    .stage-label .stage-num { font-family: var(--mono); font-size: 0.72rem; color: var(--cyan); font-weight: 700; }
+    .stage-label { font-size: 0.82rem; font-weight: 600; color: var(--text); }
+    .stage-sub { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); }
+    @media (max-width: 700px) { .stages-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 450px) { .stages-grid { grid-template-columns: 1fr; } }
+
     /* ── Pipeline flow ── */
     .pipeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 2.5rem; }
     .pipe-stage { display: grid; grid-template-columns: 48px 1fr; gap: 0; }
@@ -101,6 +113,35 @@
       <div class="field"><div class="field-label">Format</div><div class="field-val">Bayer mosaic (RGGB)</div></div>
       <div class="field"><div class="field-label">Black level</div><div class="field-val">2047</div></div>
       <div class="field"><div class="field-label">Saturation</div><div class="field-val">15000</div></div>
+    </div>
+  </div>
+
+  <!-- Stage outputs -->
+  <div class="section-title">// pipeline outputs — actual results</div>
+  <div class="stages-grid">
+    <div class="stage-card">
+      <img src="data/stages/stage1_linearized.jpg" alt="Stage 1 — Linearized" loading="lazy">
+      <div class="stage-label"><span class="stage-num">①</span> Linearized<span class="stage-sub">black-level subtracted · [0,1]</span></div>
+    </div>
+    <div class="stage-card">
+      <img src="data/stages/stage2_bayer_rggb.jpg" alt="Stage 2 — RGGB Pattern" loading="lazy">
+      <div class="stage-label"><span class="stage-num">②</span> Bayer ID — RGGB<span class="stage-sub">quarter-resolution candidate</span></div>
+    </div>
+    <div class="stage-card">
+      <img src="data/stages/stage3_white_balance_grayworld.jpg" alt="Stage 3 — Gray World" loading="lazy">
+      <div class="stage-label"><span class="stage-num">③a</span> White Balance — Gray World<span class="stage-sub">mean(G) / mean(channel)</span></div>
+    </div>
+    <div class="stage-card">
+      <img src="data/stages/stage4_white_balance_whiteworld.jpg" alt="Stage 4 — White World" loading="lazy">
+      <div class="stage-label"><span class="stage-num">③b</span> White Balance — White World<span class="stage-sub">max(G) / max(channel)</span></div>
+    </div>
+    <div class="stage-card">
+      <img src="data/stages/stage5_demosaiced.jpg" alt="Stage 5 — Demosaiced" loading="lazy">
+      <div class="stage-label"><span class="stage-num">④</span> Demosaiced<span class="stage-sub">bilinear interp per channel</span></div>
+    </div>
+    <div class="stage-card stage-card-final">
+      <img src="data/stages/stage6_final_srgb.jpg" alt="Stage 6 — Final sRGB" loading="lazy">
+      <div class="stage-label"><span class="stage-num">⑤</span> Final sRGB<span class="stage-sub">brightness × 4 · gamma IEC 61966-2-1</span></div>
     </div>
   </div>
 
