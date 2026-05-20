@@ -96,5 +96,5 @@ The-Image-Processing-Pipeline/
 
 ## Course
 
-CMPSC 473 — Computer Vision  
-The Pennsylvania State University · Summer 2022
+TBD  
+The Pennsylvania State University
