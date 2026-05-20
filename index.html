@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Processing Pipeline — RAW to sRGB</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e;
+      --green: #3fb950; --cyan: #58a6ff; --yellow: #d29922;
+      --purple: #bc8cff; --orange: #ffa657; --red: #f85149;
+      --mono: 'JetBrains Mono','Fira Code',monospace;
+    }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; line-height: 1.6; }
+    a { color: var(--cyan); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .header { border-bottom: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .header h1 { font-size: 1.4rem; font-weight: 700; }
+    .header .sub { color: var(--muted); font-size: 0.875rem; margin-top: 0.2rem; }
+    .btn { padding: 0.45rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: 1px solid var(--border); background: var(--surface); color: var(--text); display: inline-flex; align-items: center; gap: 0.4rem; transition: border-color 0.15s; }
+    .btn:hover { border-color: var(--cyan); }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 0.85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem; font-family: var(--mono); }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 2rem; }
+    .badge { padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; font-family: var(--mono); background: #1c2128; border: 1px solid #444; }
+    .b-lang { color: #d29922; } .b-lib { color: #58a6ff; } .b-tool { color: #bc8cff; }
+
+    /* ── Pipeline flow ── */
+    .pipeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 2.5rem; }
+    .pipe-stage { display: grid; grid-template-columns: 48px 1fr; gap: 0; }
+    .pipe-connector { display: flex; flex-direction: column; align-items: center; }
+    .pipe-node { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--cyan); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 0.75rem; font-weight: 700; color: var(--cyan); background: var(--bg); flex-shrink: 0; }
+    .pipe-line { width: 2px; flex: 1; background: var(--border); min-height: 16px; }
+    .pipe-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; cursor: pointer; transition: border-color 0.15s; }
+    .pipe-card:hover { border-color: var(--cyan); }
+    .pipe-card.open { border-color: var(--cyan); }
+    .pipe-card-head { display: flex; justify-content: space-between; align-items: center; }
+    .pipe-card-title { font-weight: 600; font-size: 0.95rem; }
+    .pipe-card-tag { font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+    .pipe-card-detail { display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+    .pipe-card.open .pipe-card-detail { display: block; }
+    .pipe-card-detail p { font-size: 0.85rem; color: var(--muted); line-height: 1.7; margin-bottom: 0.5rem; }
+    .pipe-card-detail code { font-family: var(--mono); font-size: 0.82rem; background: #1c2128; padding: 0.1rem 0.3rem; border-radius: 3px; color: var(--yellow); }
+    .pipe-card-detail .math-block { font-family: var(--mono); font-size: 0.82rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; color: var(--green); margin: 0.5rem 0; }
+
+    /* ── Canvas visualiser ── */
+    .vis-section { margin-bottom: 2.5rem; }
+    .vis-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+    .vis-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .vis-canvas-wrap { padding: 0.5rem; background: #0d1117; }
+    canvas { display: block; width: 100%; height: 110px; image-rendering: pixelated; }
+    .vis-label { padding: 0.5rem 0.75rem; font-size: 0.78rem; font-family: var(--mono); color: var(--muted); }
+
+    /* ── Code block ── */
+    .code-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 2rem; overflow-x: auto; }
+    .code-box pre { font-family: var(--mono); font-size: 0.78rem; line-height: 1.7; }
+    .cmt { color: #8b949e; font-style: italic; }
+    .kw  { color: #ff7b72; }
+    .fn  { color: #d2a8ff; }
+    .num { color: #79c0ff; }
+    .str { color: #a5d6ff; }
+
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2rem; text-align: center; color: var(--muted); font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <h1>Image Processing Pipeline — RAW → sRGB</h1>
+    <div class="sub">CMPSC 473 · Computer Vision · Penn State · 2022</div>
+  </div>
+  <a href="https://github.com/Halkhoori2000/The-Image-Processing-Pipeline" class="btn" target="_blank" rel="noopener">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+    GitHub
+  </a>
+</header>
+
+<div class="container">
+  <div class="badges">
+    <span class="badge b-lang">MATLAB</span>
+    <span class="badge b-lib">RAW Image Processing</span>
+    <span class="badge b-tool">Bayer Demosaicing</span>
+    <span class="badge b-tool">White Balancing</span>
+    <span class="badge b-lib">sRGB Gamma</span>
+  </div>
+
+  <!-- Pipeline Visualiser (Canvas) -->
+  <div class="section-title">// pipeline stages — simulated output</div>
+  <div class="vis-section">
+    <div class="vis-grid" id="visGrid"></div>
+    <p style="font-size:0.78rem;color:var(--muted);margin-top:0.75rem;">↑ Simulated stage outputs on a 48×36 synthetic Bayer pattern. Click a pipeline card below for the math.</p>
+  </div>
+
+  <!-- Interactive pipeline cards -->
+  <div class="section-title">// pipeline walkthrough — click to expand</div>
+  <div class="pipeline" id="pipeline"></div>
+
+  <!-- Source code -->
+  <div class="section-title">// source — solution0.m (key stages)</div>
+  <div class="code-box"><pre id="sourceCode"></pre></div>
+</div>
+
+<footer>
+  Image Processing Pipeline · MATLAB · CMPSC 473 · Penn State 2022 ·
+  <a href="https://github.com/Halkhoori2000/The-Image-Processing-Pipeline" target="_blank" rel="noopener">GitHub</a>
+</footer>
+
+<script>
+/* ── Pipeline stage definitions ─── */
+const stages = [
+  {
+    num: '①', title: 'RAW Input', tag: 'uint16 · 2856×4290 · Bayer mosaic',
+    detail: `<p>The input is a 16-bit Bayer-patterned TIFF image from a digital camera sensor. Each pixel records only one colour channel (R, G, or B) depending on its position in the 2×2 Bayer mosaic tile. The raw values are in the range [0, 65535].</p>
+    <div class="math-block">raw = imread('data/banana_slug.tiff')  // [2856 × 4290] uint16</div>`
+  },
+  {
+    num: '②', title: 'Linearization', tag: 'black-level subtraction · saturation clamp',
+    detail: `<p>Camera sensors are not perfectly linear — there's a non-zero "black level" output even with zero light. We subtract this and normalise to [0, 1] by dividing by the saturation headroom.</p>
+    <div class="math-block">lin = (raw − 2047) / (15000 − 2047)
+lin = clamp(lin, 0, 1)</div>
+    <p>Values below black level clamp to 0; values at or above saturation clamp to 1.</p>`
+  },
+  {
+    num: '③', title: 'Bayer Pattern ID', tag: 'GRBG / RGGB / BGGR / GBRG → select RGGB',
+    detail: `<p>A 2×2 Bayer tile has four possible arrangements of the R, G1, G2, B channels. We form a quarter-resolution RGB image for each candidate pattern and visually inspect which looks most natural (green channel should dominate, colours should be plausible).</p>
+    <div class="math-block">im_rggb = cat(3, lin(1:2:end, 1:2:end),   // R
+                     lin(1:2:end, 2:2:end),   // G1
+                     lin(2:2:end, 2:2:end))   // B
+// → RGGB selected as correct pattern</div>`
+  },
+  {
+    num: '④', title: 'White Balancing', tag: 'gray-world · white-world',
+    detail: `<p><strong>Gray-world assumption:</strong> The average colour of the scene is neutral gray. Scale each channel so its mean equals the green mean.</p>
+    <div class="math-block">scale_R = mean(G) / mean(R)
+scale_B = mean(G) / mean(B)
+im_gw[R pixels] *= scale_R
+im_gw[B pixels] *= scale_B</div>
+    <p><strong>White-world assumption:</strong> The brightest pixel in the scene is specular white. Scale each channel by <code>max(G) / max(channel)</code>.</p>`
+  },
+  {
+    num: '⑤', title: 'Demosaicing', tag: 'bilinear interpolation per channel',
+    detail: `<p>Each Bayer channel covers only 1/4 of the pixels (1/2 for green). We interpolate the missing values for each channel independently using bilinear interpolation (<code>interp2</code>), then compose R, G, B into a full-resolution RGB image.</p>
+    <div class="math-block">// Red: known at (odd rows, odd cols)
+// Interpolate at all other positions via interp2
+// Same for Blue (even rows, even cols)
+// Green: known at two sub-grids → average both interpolations
+im_rgb = cat(3, red_dms, green_dms, blue_dms)</div>`
+  },
+  {
+    num: '⑥', title: 'Brightness + Gamma Correction', tag: 'sRGB transfer function (IEC 61966-2-1)',
+    detail: `<p>Linear light values are perceptually non-uniform — humans are more sensitive to dark tones. The sRGB gamma curve redistributes values so equal numerical steps appear equally spaced in perceived brightness.</p>
+    <div class="math-block">if v ≤ 0.0031308:   out = 12.92 × v
+else:               out = 1.055 × v^(1/2.4) − 0.055</div>
+    <p>Before applying gamma, a brightness multiplier (×4) is applied to account for the scene's overall exposure level.</p>`
+  }
+];
+
+/* ── Render pipeline cards ── */
+const pipe = document.getElementById('pipeline');
+stages.forEach((s, i) => {
+  const row = document.createElement('div');
+  row.className = 'pipe-stage';
+  row.innerHTML = `
+    <div class="pipe-connector">
+      <div class="pipe-node">${s.num}</div>
+      ${i < stages.length - 1 ? '<div class="pipe-line"></div>' : ''}
+    </div>
+    <div class="pipe-card" onclick="this.classList.toggle('open')">
+      <div class="pipe-card-head">
+        <div class="pipe-card-title">${s.title}</div>
+        <div class="pipe-card-tag">${s.tag}</div>
+      </div>
+      <div class="pipe-card-detail">${s.detail}</div>
+    </div>`;
+  pipe.appendChild(row);
+});
+
+/* ── Canvas visualiser ── */
+const stageLabels = ['① RAW (Bayer)', '② Linearized', '③ Pattern ID', '④ White Balanced', '⑤ Demosaiced', '⑥ Final sRGB'];
+const grid = document.getElementById('visGrid');
+const W = 48, H = 36;
+
+function makeBayer() {
+  const d = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * 4;
+    const isR = (y % 2 === 0 && x % 2 === 0);
+    const isB = (y % 2 === 1 && x % 2 === 1);
+    const isG = !isR && !isB;
+    const v = Math.floor(128 + 60 * Math.sin(x * 0.3) * Math.cos(y * 0.3));
+    d[i]   = isR ? v : 20;
+    d[i+1] = isG ? v : 20;
+    d[i+2] = isB ? v : 20;
+    d[i+3] = 255;
+  }
+  return d;
+}
+
+function applyLinear(d) {
+  const out = new Uint8ClampedArray(d);
+  for (let i = 0; i < out.length; i += 4) {
+    out[i]   = Math.min(255, out[i] * 1.2);
+    out[i+1] = Math.min(255, out[i+1] * 1.2);
+    out[i+2] = Math.min(255, out[i+2] * 1.2);
+  }
+  return out;
+}
+
+function applyWB(d) {
+  const out = new Uint8ClampedArray(d);
+  for (let i = 0; i < out.length; i += 4) {
+    out[i]   = Math.min(255, out[i]   * 1.1);
+    out[i+2] = Math.min(255, out[i+2] * 0.9);
+  }
+  return out;
+}
+
+function applyDemosaic(d) {
+  const out = new Uint8ClampedArray(W * H * 4);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const oi = (y * W + x) * 4;
+    let r = 0, g = 0, b = 0, cnt = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const ny = y+dy, nx = x+dx;
+      if (ny < 0 || ny >= H || nx < 0 || nx >= W) continue;
+      const si = (ny * W + nx) * 4;
+      r += d[si]; g += d[si+1]; b += d[si+2]; cnt++;
+    }
+    out[oi]=r/cnt; out[oi+1]=g/cnt; out[oi+2]=b/cnt; out[oi+3]=255;
+  }
+  return out;
+}
+
+function applyGamma(d) {
+  const out = new Uint8ClampedArray(d);
+  for (let i = 0; i < out.length; i += 4) {
+    for (let c = 0; c < 3; c++) {
+      let v = out[i+c] / 255;
+      v = v <= 0.0031308 ? 12.92*v : 1.055*Math.pow(v,1/2.4)-0.055;
+      out[i+c] = Math.min(255, Math.max(0, v*255));
+    }
+  }
+  return out;
+}
+
+const raw = makeBayer();
+const lin = applyLinear(raw);
+const wb  = applyWB(lin);
+const dem = applyDemosaic(wb);
+const fin = applyGamma(dem);
+const datas = [raw, lin, wb, wb, dem, fin];
+
+stageLabels.forEach((lbl, i) => {
+  const card = document.createElement('div'); card.className = 'vis-card';
+  const wrap = document.createElement('div'); wrap.className = 'vis-canvas-wrap';
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const id = ctx.createImageData(W, H);
+  id.data.set(datas[i]);
+  ctx.putImageData(id, 0, 0);
+  wrap.appendChild(c);
+  const label = document.createElement('div'); label.className = 'vis-label'; label.textContent = lbl;
+  card.appendChild(wrap); card.appendChild(label);
+  grid.appendChild(card);
+});
+
+/* ── Source code highlight ── */
+document.getElementById('sourceCode').innerHTML = `<span class="cmt">%% Linearization</span>
+black = <span class="num">2047</span>; saturation = <span class="num">15000</span>;
+lin_bayer = (raw - black) / (saturation - black);
+lin_bayer = <span class="fn">max</span>(<span class="num">0</span>, <span class="fn">min</span>(lin_bayer, <span class="num">1</span>));
+
+<span class="cmt">%% White Balancing — Gray World</span>
+red_mean   = <span class="fn">mean</span>(red(:));
+green_mean = <span class="fn">mean</span>([green1(:); green2(:)]);
+blue_mean  = <span class="fn">mean</span>(blue(:));
+im_gw(<span class="num">1</span>:<span class="num">2</span>:<span class="kw">end</span>, <span class="num">1</span>:<span class="num">2</span>:<span class="kw">end</span>) = red   * green_mean / red_mean;
+im_gw(<span class="num">2</span>:<span class="num">2</span>:<span class="kw">end</span>, <span class="num">2</span>:<span class="num">2</span>:<span class="kw">end</span>) = blue  * green_mean / blue_mean;
+
+<span class="cmt">%% Demosaicing — bilinear interpolation per channel</span>
+[Y, X] = <span class="fn">meshgrid</span>(<span class="num">1</span>:<span class="num">2</span>:Xsize, <span class="num">1</span>:<span class="num">2</span>:Ysize);
+vals   = im(<span class="num">1</span>:<span class="num">2</span>:<span class="kw">end</span>, <span class="num">1</span>:<span class="num">2</span>:<span class="kw">end</span>);   <span class="cmt">% red channel</span>
+<span class="cmt">% ... interp2 for all positions ...</span>
+im_rgb = <span class="fn">cat</span>(<span class="num">3</span>, red_dms, green_dms, blue_dms);
+
+<span class="cmt">%% Brightness + Gamma (sRGB IEC 61966-2-1)</span>
+im_gray   = <span class="fn">rgb2gray</span>(im_rgb);
+im_bright = im_rgb * <span class="num">4</span> * <span class="fn">max</span>(im_gray(:));
+
+inds = (im_bright <= <span class="num">0.0031308</span>);
+im_final(inds)  = <span class="num">12.92</span> * im_bright(inds);
+im_final(~inds) = <span class="fn">real</span>(<span class="num">1.055</span> * im_bright(~inds) .^ (<span class="num">1</span>/<span class="num">2.4</span>) - <span class="num">0.055</span>);`;
+</script>
+</body>
+</html>
