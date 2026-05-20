@@ -31,10 +31,13 @@
     .b-lang { color: #d29922; } .b-lib { color: #58a6ff; } .b-tool { color: #bc8cff; }
 
     /* ── Input info ── */
-    .input-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-    .input-card .field { display: flex; flex-direction: column; gap: 0.2rem; }
+    .input-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 2rem; display: flex; align-items: stretch; overflow: hidden; }
+    .input-img { width: 280px; min-width: 200px; object-fit: cover; display: block; flex-shrink: 0; }
+    .input-meta { padding: 1rem 1.25rem; display: flex; flex-direction: column; gap: 0.65rem; justify-content: center; }
+    .input-card .field { display: flex; flex-direction: column; gap: 0.15rem; }
     .input-card .field-label { font-size: 0.72rem; font-family: var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
     .input-card .field-val { font-size: 0.88rem; font-family: var(--mono); color: var(--yellow); }
+    @media (max-width: 600px) { .input-card { flex-direction: column; } .input-img { width: 100%; } }
 
     /* ── Pipeline flow ── */
     .pipeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 2.5rem; }
@@ -90,12 +93,15 @@
   <!-- Input -->
   <div class="section-title">// input</div>
   <div class="input-card">
-    <div class="field"><div class="field-label">File</div><div class="field-val">data/banana_slug.tiff</div></div>
-    <div class="field"><div class="field-label">Size</div><div class="field-val">2856 × 4290 px</div></div>
-    <div class="field"><div class="field-label">Type</div><div class="field-val">uint16 (16-bit RAW)</div></div>
-    <div class="field"><div class="field-label">Format</div><div class="field-val">Bayer mosaic (RGGB)</div></div>
-    <div class="field"><div class="field-label">Black level</div><div class="field-val">2047</div></div>
-    <div class="field"><div class="field-label">Saturation</div><div class="field-val">15000</div></div>
+    <img src="data/banana_slug_preview.jpg" alt="banana_slug RAW input — Bayer mosaic" class="input-img">
+    <div class="input-meta">
+      <div class="field"><div class="field-label">File</div><div class="field-val">data/banana_slug.tiff</div></div>
+      <div class="field"><div class="field-label">Size</div><div class="field-val">2856 × 4290 px</div></div>
+      <div class="field"><div class="field-label">Type</div><div class="field-val">uint16 (16-bit RAW)</div></div>
+      <div class="field"><div class="field-label">Format</div><div class="field-val">Bayer mosaic (RGGB)</div></div>
+      <div class="field"><div class="field-label">Black level</div><div class="field-val">2047</div></div>
+      <div class="field"><div class="field-label">Saturation</div><div class="field-val">15000</div></div>
+    </div>
   </div>
 
   <!-- Pipeline walkthrough -->
