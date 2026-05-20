@@ -96,5 +96,5 @@ The-Image-Processing-Pipeline/
 
 ## Course
 
-TBD  
+CMPEN 454 — Computer Vision I  
 The Pennsylvania State University
