@@ -1,6 +1,8 @@
 # Image Processing Pipeline — RAW to sRGB in MATLAB
 
-An end-to-end RAW image processing pipeline implemented from scratch in MATLAB, converting a 16-bit Bayer sensor image to a display-ready sRGB output. Each stage is implemented manually without using MATLAB's built-in image processing functions.
+Takes a raw photo straight off a camera sensor — before any processing — and converts it into a normal, viewable colour image. This is the same process that happens inside every digital camera, but built from scratch in code to show how each step works.
+
+Implemented in MATLAB without using any built-in image processing functions. The pipeline covers linearization (black-level subtraction and saturation clamping), Bayer pattern identification across all four colour filter arrangements, gray-world and white-world white balancing, bilinear demosaicing by interpolating each colour channel independently, and sRGB gamma correction per the IEC 61966-2-1 transfer function.
 
 **[Pipeline Walkthrough →](https://halkhoori2000.github.io/Image-Processing-Pipeline/)**
 
@@ -84,7 +86,7 @@ The script displays intermediate figures at each stage and the final sRGB image.
 ## Project Structure
 
 ```
-The-Image-Processing-Pipeline/
+Image-Processing-Pipeline/
 ├── src/
 │   └── solution0.m       ← full pipeline implementation
 ├── data/
