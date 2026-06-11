@@ -112,4 +112,4 @@ Image-Processing-Pipeline/
 ## Course
 
 CMPEN 454 — Fundamentals of Computer Vision  
-The Pennsylvania State University
+The Pennsylvania State University · 2022
