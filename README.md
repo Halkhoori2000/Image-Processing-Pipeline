@@ -1,8 +1,10 @@
 # Image Processing Pipeline — RAW to sRGB in MATLAB
 
+*CMPEN 454 — Fundamentals of Computer Vision · The Pennsylvania State University · 2022*
+
 Takes a raw photo straight off a camera sensor — before any processing — and converts it into a normal, viewable colour image. This is the same process that happens inside every digital camera, but built from scratch in code to show how each step works.
 
-Implemented in MATLAB without using any built-in image processing functions. The pipeline covers linearization (black-level subtraction and saturation clamping), Bayer pattern identification across all four colour filter arrangements, gray-world and white-world white balancing, bilinear demosaicing by interpolating each colour channel independently, and sRGB gamma correction per the IEC 61966-2-1 transfer function.
+Implemented in MATLAB with the core stages built from scratch rather than with built-in image processing routines. The pipeline covers linearization (black-level subtraction and saturation clamping), Bayer pattern identification across all four colour filter arrangements, gray-world and white-world white balancing, bilinear demosaicing by interpolating each colour channel independently, and sRGB gamma correction per the IEC 61966-2-1 transfer function.
 
 **[Pipeline Walkthrough →](https://halkhoori2000.github.io/Image-Processing-Pipeline/)**
 
